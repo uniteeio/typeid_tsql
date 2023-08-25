@@ -21,13 +21,13 @@ GO
 INSERT INTO MyTable (Label) VALUES ('new label')
 GO
 
-SELECT * FROM MyTable
+SELECT Id, Label, dbo.typeId_Decode(Id) AS DecodedUID FROM MyTable
 GO
 ```
 
-| Id                                 | Label         |
-|----------------------------------- | ------------- |
-| test_069t2trynchwpq50001pqtwnpy    | new label     |
+| Id                                 | Label         | DecodedUID   |
+|----------------------------------- | ------------- | ------------------------------------ |
+| test_069t2trynchwpq50001pqtwnpy    | new label     | 064e85ac-7aac-8f2d-7280-000dafae56de |
 
 ## Caveat
 
