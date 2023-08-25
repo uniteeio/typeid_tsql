@@ -8,5 +8,5 @@ GO
 CREATE FUNCTION typeId_NewTypeId(@prefix VARCHAR(63)) RETURNS VARCHAR(90)
 AS
 BEGIN
-    RETURN dbo.typeId_CreateFromUuid(@prefix, dbo.typeId_NewIdv7())
+    RETURN dbo.typeId_Encode(@prefix, dbo.typeId_NewIdv7())
 END

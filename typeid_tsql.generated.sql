@@ -288,11 +288,11 @@ GO
 IF EXISTS (
         SELECT *
         FROM sys.objects
-        WHERE object_id = OBJECT_ID(N'[dbo].[typeId_CreateFromUuid]')
+        WHERE object_id = OBJECT_ID(N'[dbo].[typeId_Encode]')
         )
-    DROP FUNCTION [dbo].[typeId_CreateFromUuid]
+    DROP FUNCTION [dbo].[typeId_Encode]
 GO
-CREATE FUNCTION typeId_CreateFromUuid(@prefix VARCHAR(63), @uuid VARCHAR(36)) RETURNS VARCHAR(90)
+CREATE FUNCTION typeId_Encode(@prefix VARCHAR(63), @uuid VARCHAR(36)) RETURNS VARCHAR(90)
 AS
 BEGIN
     RETURN LOWER(@prefix) + '_' + dbo.typeId_ToBase32('00' + dbo.typeId_HexToBinary(@uuid))
@@ -309,6 +309,6 @@ GO
 CREATE FUNCTION typeId_NewTypeId(@prefix VARCHAR(63)) RETURNS VARCHAR(90)
 AS
 BEGIN
-    RETURN dbo.typeId_CreateFromUuid(@prefix, dbo.typeId_NewIdv7())
+    RETURN dbo.typeId_Encode(@prefix, dbo.typeId_NewIdv7())
 END
 GO
