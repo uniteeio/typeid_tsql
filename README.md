@@ -7,7 +7,7 @@
 Directly run the content of [typeid_tsql](https://github.com/uniteeio/typeid_tsql/blob/main/typeid_tsql.generated.sql) on
 your server.
 
-Regenerate the SQL by yourself using the script `./generate.sh`
+Regenerate the SQL by yourself using the script `./build.sh`
 
 ## Usage
 
