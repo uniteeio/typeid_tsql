@@ -18,5 +18,7 @@ BEGIN
         SET @num = @num / 2
     END
 
+    IF @binaryStr = ''
+        RETURN '0'
     RETURN @binaryStr
 END

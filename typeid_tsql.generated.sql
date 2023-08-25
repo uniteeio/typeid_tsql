@@ -34,25 +34,25 @@ BEGIN
     SET @i = 1
     SET @hexString = ''
 
-    -- Vérifie que la longueur de la chaîne binaire est un multiple de 4
+    -- Check if the binary string length is divisible by 4
     IF @len % 4 <> 0 SET @binaryString = RIGHT(REPLICATE('0', 4 - @len % 4) + @binaryString, @len + 4 - @len % 4)
 
-    -- Réinitialise la longueur de la chaîne binaire
+    -- Reset the binary string length
     SET @len = LEN(@binaryString)
 
     WHILE (@i <= @len)
     BEGIN
-        -- Prend 4 bits (un caractère hexadécimal)
+        -- Take 4 bits (one hex character)
         SET @subString = SUBSTRING(@binaryString, @i, 4)
         
-        -- Convertit les 4 bits en une valeur décimale
+        -- Convert 4 bits to decimal value
         SET @decimalValue = 
             CAST(SUBSTRING(@subString, 4, 1) AS INT) * 1 +
             CAST(SUBSTRING(@subString, 3, 1) AS INT) * 2 +
             CAST(SUBSTRING(@subString, 2, 1) AS INT) * 4 +
             CAST(SUBSTRING(@subString, 1, 1) AS INT) * 8
 
-        -- Convertit la valeur décimale en un caractère hexadécimal
+        -- Convert decimal value to hex character
         SET @hexString = @hexString + 
             CASE 
                 WHEN @decimalValue <= 9 THEN CHAR(@decimalValue + 48)
@@ -82,7 +82,7 @@ BEGIN
     DECLARE @hexChar CHAR(1)
     DECLARE @decimalValue INT
 
-    -- Supprime tous les tirets du nombre hexadécimal
+    -- Clean up the hex string from hyphens
     SET @hexString = REPLACE(@hexString, '-', '')
     
     SET @len = LEN(@hexString)
@@ -91,10 +91,10 @@ BEGIN
 
     WHILE (@i <= @len)
     BEGIN
-        -- Prend un caractère hexadécimal
+        -- Take next hex character
         SET @hexChar = SUBSTRING(@hexString, @i, 1)
         
-        -- Convertit le caractère hexadécimal en une valeur décimale
+        -- Convert hex character to decimal value
         SET @decimalValue = 
             CASE 
                 WHEN @hexChar BETWEEN '0' AND '9' THEN ASCII(@hexChar) - 48
@@ -103,7 +103,7 @@ BEGIN
                 ELSE NULL
             END
 
-        -- Convertit la valeur décimale en une chaîne binaire de 4 bits
+        -- Convert decimal value to binary string
         SET @binaryString = @binaryString +
             CAST((@decimalValue / 8) % 2 AS CHAR(1)) +
             CAST((@decimalValue / 4) % 2 AS CHAR(1)) +
@@ -142,12 +142,12 @@ BEGIN
 
     WHILE @len > 0
     BEGIN
-        -- Extraire le bit le plus à droite
+        -- Get the rightmost bit
         DECLARE @bit CHAR(1) = SUBSTRING(@binaryStr, @len, 1)
-        -- Ajouter sa valeur à la valeur décimale
+        -- Add its value to the result value
         SET @decValue = @decValue + CONVERT(BIGINT, CAST(@bit AS SMALLINT) * CONVERT(bigint, POWER(2, @power)))
         
-        -- Passer au bit suivant
+        -- Switch to the next bit
         SET @power = @power + 1
         SET @len = @len - 1
     END
@@ -175,9 +175,8 @@ BEGIN
         SET @num = @num / 2
     END
 
-    -- Remplir les zéros à gauche si nécessaire pour avoir une chaîne de 32 caractères
-   
-
+    IF @binaryStr = ''
+        RETURN '0'
     RETURN @binaryStr
 END
 GO
@@ -260,26 +259,69 @@ BEGIN
     DECLARE @result VARCHAR(90) = ''
     DECLARE @dict VARCHAR(32) = '0123456789abcdefghjkmnpqrstvwxyz'
     DECLARE @startIndex INT = 1
-    DECLARE @endIndex INT = 5 -- 5 bits à la fois
+    DECLARE @endIndex INT = 5 -- 5 bits iterations
     DECLARE @currentBits VARCHAR(5)
     DECLARE @currentBitsValue INT
     DECLARE @len INT = LEN(@binaryString)
 
     WHILE @startIndex <= @len
     BEGIN
-        -- Extraire 5 bits à partir de la chaîne binaire
+        -- Get 5 bits from the binary string
         SET @currentBits = SUBSTRING(@binaryString, @startIndex, @endIndex)
 
-        -- Convertir ces 5 bits en décimal
+        -- Convert these 5 bits to decimal
         DECLARE @decimalValue INT = 0
         SET @decimalValue = dbo.typeId_BinaryToInt(@currentBits)
 
-        -- Utiliser la valeur décimale pour trouver le caractère correspondant dans le dictionnaire
+        -- Use the decimal value to find the corresponding character in the dictionary
         SET @result = @result + SUBSTRING(@dict, @decimalValue + 1, 1)
 
-        -- Mettre à jour les indices de début et de fin pour la prochaine itération
+        -- Switch to the next 5 bits
         SET @startIndex = @startIndex + 5
         SET @endIndex = @endIndex + 5
+    END
+
+    RETURN @result
+END
+GO
+IF EXISTS (
+        SELECT *
+        FROM sys.objects
+        WHERE object_id = OBJECT_ID(N'[dbo].[typeId_FromBase32]')
+        )
+    DROP FUNCTION [dbo].[typeId_FromBase32]
+GO
+
+CREATE FUNCTION dbo.typeId_FromBase32 (
+    @customBaseString VARCHAR(26)
+)
+RETURNS VARCHAR(230) -- 26 caractères x 5 bits = 130 bits
+AS
+BEGIN
+    DECLARE @result VARCHAR(230) = ''
+    DECLARE @dict VARCHAR(32) = '0123456789abcdefghjkmnpqrstvwxyz'
+    DECLARE @len INT = LEN(@customBaseString)
+    DECLARE @i INT = 1
+    DECLARE @currentChar CHAR(1)
+    DECLARE @currentCharIndex INT
+    DECLARE @binaryValue VARCHAR(5)
+    
+    WHILE @i <= @len
+    BEGIN
+        -- Get the current character
+        SET @currentChar = SUBSTRING(@customBaseString, @i, 1)
+
+        -- Find its index in the dictionary
+        SET @currentCharIndex = CHARINDEX(@currentChar, @dict) - 1
+
+        -- Convert this index to binary
+        SET @binaryValue = dbo.typeId_IntToBinary(@currentCharIndex)
+
+        -- Add leading zeros if necessary and concatenate the result
+        SET @result = @result + RIGHT(REPLICATE('0', 5) + @binaryValue, 5)
+
+        -- Switch to the next character
+        SET @i = @i + 1
     END
 
     RETURN @result
@@ -296,6 +338,42 @@ CREATE FUNCTION typeId_Encode(@prefix VARCHAR(63), @uuid VARCHAR(36)) RETURNS VA
 AS
 BEGIN
     RETURN LOWER(@prefix) + '_' + dbo.typeId_ToBase32('00' + dbo.typeId_HexToBinary(@uuid))
+END
+GO
+GO
+IF EXISTS (
+        SELECT *
+        FROM sys.objects
+        WHERE object_id = OBJECT_ID(N'[dbo].[typeId_Decode]')
+        )
+    DROP FUNCTION [dbo].[typeId_Decode]
+GO
+CREATE FUNCTION typeId_Decode(@typeid VARCHAR(90)) RETURNS VARCHAR(36)
+AS
+BEGIN
+    -- Checking suffix length - Must be 26
+    DECLARE @suffixLength INT
+    SET @suffixLength = CHARINDEX('_', REVERSE(@typeid)) - 1
+    IF (@suffixLength <> 26)
+        RETURN ''
+
+    -- Getting suffix (last 26 chars)
+    DECLARE @suffix VARCHAR(26)
+    SET @suffix = RIGHT(@typeid, 26)
+
+    -- Converting to binary and omitting the 2 trailing 0
+    DECLARE @binaryString VARCHAR(130)
+    SET @binaryString = RIGHT(dbo.typeId_FromBase32(@suffix), 128)
+   
+    -- Conversion to hexadecimal getting a 32 chars value
+    DECLARE @Hexa VARCHAR(50) 
+    SET @Hexa = dbo.typeId_BinaryToHex(@binaryString)
+
+    -- Inserting decorating hyphens
+    SET @Hexa = LEFT(@Hexa, 8) + '-' + SUBSTRING(@Hexa, 9, 4) + '-' + SUBSTRING(@Hexa, 13, 4) + '-' + SUBSTRING(@Hexa, 17, 4)
+    + '-' + SUBSTRING(@Hexa, 21, LEN(@Hexa))
+
+    RETURN @Hexa
 END
 GO
 GO
