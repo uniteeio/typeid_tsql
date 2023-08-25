@@ -379,20 +379,14 @@ GO
 CREATE FUNCTION typeId_Decode(@typeid VARCHAR(90)) RETURNS VARCHAR(36)
 AS
 BEGIN
-    -- Checking suffix length - Must be 26
-    DECLARE @suffixLength INT
-    SET @suffixLength = CHARINDEX('_', REVERSE(@typeid)) - 1
-    IF (@suffixLength <> 26)
-        RETURN ''
+    -- Converting to binary 
+    DECLARE @binaryString VARCHAR(128)
+    SET @binaryString = dbo.typeId_DecodeBinary(@typeid)
 
-    -- Getting suffix (last 26 chars)
-    DECLARE @suffix VARCHAR(26)
-    SET @suffix = RIGHT(@typeid, 26)
 
-    -- Converting to binary and omitting the 2 trailing 0
-    DECLARE @binaryString VARCHAR(130)
-    SET @binaryString = RIGHT(dbo.typeId_FromBase32(@suffix), 128)
-   
+    IF (@binaryString = '')
+        RETURN '' 
+
     -- Conversion to hexadecimal getting a 32 chars value
     DECLARE @Hexa VARCHAR(50) 
     SET @Hexa = dbo.typeId_BinaryToHex(@binaryString)
@@ -402,6 +396,32 @@ BEGIN
     + '-' + SUBSTRING(@Hexa, 21, LEN(@Hexa))
 
     RETURN @Hexa
+END
+GO
+GO
+IF EXISTS (
+        SELECT *
+        FROM sys.objects
+        WHERE object_id = OBJECT_ID(N'[dbo].[typeId_DecodeDate]')
+        )
+    DROP FUNCTION [dbo].[typeId_DecodeDate]
+GO
+CREATE FUNCTION typeId_DecodeDate(@typeid VARCHAR(90)) RETURNS DATETIME2
+AS
+BEGIN
+
+    DECLARE @uuidBinary VARCHAR(128) = dbo.typeId_DecodeBinary(@typeid)
+
+    DECLARE @secondsBinary VARCHAR(36) = LEFT(@uuidBinary, 36)
+    DECLARE @seconds INT = dbo.typeId_BinaryToInt(@secondsBinary)
+
+    DECLARE @result DATETIME2 = DATEADD(ss, @seconds, CONVERT(datetime, '01/01/1970' ))
+
+    DECLARE @milliSecondsBinary VARCHAR(10) = SUBSTRING(@uuidBinary, 36, 10)
+    DECLARE @milliSeconds INT = dbo.typeId_BinaryToInt(@milliSecondsBinary)
+
+    SET @result = DATEADD(ms, @milliSeconds, @result)
+    RETURN @result
 END
 GO
 GO
