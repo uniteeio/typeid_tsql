@@ -8,20 +8,14 @@ GO
 CREATE FUNCTION typeId_Decode(@typeid VARCHAR(90)) RETURNS VARCHAR(36)
 AS
 BEGIN
-    -- Checking suffix length - Must be 26
-    DECLARE @suffixLength INT
-    SET @suffixLength = CHARINDEX('_', REVERSE(@typeid)) - 1
-    IF (@suffixLength <> 26)
-        RETURN ''
+    -- Converting to binary 
+    DECLARE @binaryString VARCHAR(128)
+    SET @binaryString = dbo.typeId_DecodeBinary(@typeid)
 
-    -- Getting suffix (last 26 chars)
-    DECLARE @suffix VARCHAR(26)
-    SET @suffix = RIGHT(@typeid, 26)
 
-    -- Converting to binary and omitting the 2 trailing 0
-    DECLARE @binaryString VARCHAR(130)
-    SET @binaryString = RIGHT(dbo.typeId_FromBase32(@suffix), 128)
-   
+    IF (@binaryString = '')
+        RETURN '' 
+
     -- Conversion to hexadecimal getting a 32 chars value
     DECLARE @Hexa VARCHAR(50) 
     SET @Hexa = dbo.typeId_BinaryToHex(@binaryString)
