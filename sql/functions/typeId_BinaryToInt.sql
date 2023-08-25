@@ -5,7 +5,7 @@ IF EXISTS (
         )
     DROP FUNCTION [dbo].[typeId_BinaryToInt]
 GO
-CREATE FUNCTION dbo.typeId_BinaryToInt (@binaryStr VARCHAR(32))
+CREATE FUNCTION dbo.typeId_BinaryToInt (@binaryStr VARCHAR(256))
 RETURNS BIGINT
 AS
 BEGIN
