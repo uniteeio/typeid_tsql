@@ -18,8 +18,5 @@ BEGIN
         SET @num = @num / 2
     END
 
-    -- Remplir les zéros à gauche si nécessaire pour avoir une chaîne de 32 caractères
-   
-
     RETURN @binaryStr
 END

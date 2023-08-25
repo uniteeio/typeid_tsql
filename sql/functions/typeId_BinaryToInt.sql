@@ -24,12 +24,12 @@ BEGIN
 
     WHILE @len > 0
     BEGIN
-        -- Extraire le bit le plus à droite
+        -- Get the rightmost bit
         DECLARE @bit CHAR(1) = SUBSTRING(@binaryStr, @len, 1)
-        -- Ajouter sa valeur à la valeur décimale
+        -- Add its value to the result value
         SET @decValue = @decValue + CONVERT(BIGINT, CAST(@bit AS SMALLINT) * CONVERT(bigint, POWER(2, @power)))
         
-        -- Passer au bit suivant
+        -- Switch to the next bit
         SET @power = @power + 1
         SET @len = @len - 1
     END

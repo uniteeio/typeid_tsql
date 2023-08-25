@@ -15,7 +15,7 @@ BEGIN
     DECLARE @hexChar CHAR(1)
     DECLARE @decimalValue INT
 
-    -- Supprime tous les tirets du nombre hexadécimal
+    -- Clean up the hex string from hyphens
     SET @hexString = REPLACE(@hexString, '-', '')
     
     SET @len = LEN(@hexString)
@@ -24,10 +24,10 @@ BEGIN
 
     WHILE (@i <= @len)
     BEGIN
-        -- Prend un caractère hexadécimal
+        -- Take next hex character
         SET @hexChar = SUBSTRING(@hexString, @i, 1)
         
-        -- Convertit le caractère hexadécimal en une valeur décimale
+        -- Convert hex character to decimal value
         SET @decimalValue = 
             CASE 
                 WHEN @hexChar BETWEEN '0' AND '9' THEN ASCII(@hexChar) - 48
@@ -36,7 +36,7 @@ BEGIN
                 ELSE NULL
             END
 
-        -- Convertit la valeur décimale en une chaîne binaire de 4 bits
+        -- Convert decimal value to binary string
         SET @binaryString = @binaryString +
             CAST((@decimalValue / 8) % 2 AS CHAR(1)) +
             CAST((@decimalValue / 4) % 2 AS CHAR(1)) +
